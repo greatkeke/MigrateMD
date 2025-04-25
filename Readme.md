@@ -1,0 +1,1 @@
+Migrate markdown files to Obsidian with propertities.
