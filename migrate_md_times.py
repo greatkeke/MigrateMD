@@ -5,8 +5,10 @@ from datetime import datetime
 
 def extract_time(content, field):
     """从内容中提取时间字段(created/updated)"""
-    # 匹配格式如：created: 2025-04-11 04:11:14Z 或 updated: 2024-12-19 08:10:06Z
-    match = re.search(fr'{field}:\s*([0-9\-]+\s[0-9:]+)Z?', content)
+    # 匹配格式如：created: 2025-04-11 04:11:14 或 updated: 2024-12-19 08:10:06
+    # match = re.search(fr'{field}:\s*([0-9\-]+\s[0-9:]+)Z?', content)
+    match = re.search(fr'{field}:\s*([\d\-]+\s+[\d:]+)\s*Z?', content)
+
     if not match:
         return None
     
