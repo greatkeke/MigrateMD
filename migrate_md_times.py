@@ -2,6 +2,49 @@ import os
 import re
 import sys
 from datetime import datetime
+import win32file
+import win32con
+import pywintypes
+
+
+def update_file_time_windows(file_path, created_dt=None, updated_dt=None):
+    """
+    使用 Windows API 修改文件时间
+    """
+    try:
+        # 以写权限打开文件
+        handle = win32file.CreateFile(
+            file_path,
+            win32con.GENERIC_WRITE,
+            win32con.FILE_SHARE_READ | win32con.FILE_SHARE_WRITE,
+            None,
+            win32con.OPEN_EXISTING,
+            win32con.FILE_ATTRIBUTE_NORMAL,
+            None
+        )
+        
+        # 转换为 Windows FILETIME 格式
+        def dt_to_filetime(dt):
+            if dt is None:
+                return None
+            # 注意：pywintypes.Time 会自动转换 datetime
+            return pywintypes.Time(dt.timestamp())
+        
+        # 分别设置三个时间 (创建时间, 访问时间, 修改时间)
+        # 这里只修改创建时间和修改时间，访问时间保留原值
+        ct = dt_to_filetime(created_dt) if created_dt else None
+        mt = dt_to_filetime(updated_dt) if updated_dt else None
+        
+        # SetFileTime(句柄, 创建时间, 访问时间, 修改时间)
+        win32file.SetFileTime(handle, ct, None, mt)
+        
+        handle.close()
+        return True
+        
+    except Exception as e:
+        print(f"修改失败: {e}")
+        return False
+
 
 def extract_time(content, field):
     """从内容中提取时间字段(created/updated)"""
@@ -52,7 +95,7 @@ def process_md_files(root_dir):
                 updated_time = extract_time(content, 'updated')
                 
                 if created_time or updated_time:
-                    if update_file_time(file_path, created_time, updated_time):
+                    if update_file_time_windows(file_path, created_time, updated_time):
                         log_msg = []
                         if created_time:
                             log_msg.append(f"created: {created_time}")
